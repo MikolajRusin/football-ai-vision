@@ -48,10 +48,10 @@ def apply_nms(
     )
 # ----------------------------------------------------NON-MAXIMUM SUPRESSION----------------------------------------------------
 
-# ----------------------------------------------------CONVERT XYXY TO XYWH FORMAT----------------------------------------------------
-def xywh_to_xyxy(boxes: np.ndarray) -> Tuple[np.ndarray]:
+# -------------------------------------------------CONVERT XCYCWH TO XYXY FORMAT------------------------------------------------
+def xcycwh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
     '''
-    Converts bounding boxes from xywh (x_center, y_center, width, height) to xyxy (x_min, y_min, x_max, y_max) format.
+    Converts bounding boxes from xcycwh (x_center, y_center, width, height) to xyxy (x_min, y_min, x_max, y_max) format.
 
     Args:
         boxes (np.ndarray): Bounding boxes in xywh format, shape (N, 4).
@@ -69,4 +69,27 @@ def xywh_to_xyxy(boxes: np.ndarray) -> Tuple[np.ndarray]:
         [x_min, y_min, x_max, y_max], 
         axis=1
     )
-# ----------------------------------------------------CONVERT XYXY TO XYWH FORMAT----------------------------------------------------
+# --------------------------------------------------CONVERT XCYCWH TO XYXY FORMAT------------------------------------------------
+
+# ---------------------------------------------------CONVERT XYXY TO XYWH FORMAT-------------------------------------------------
+def xyxy_to_xywh(boxes: np.ndarray) -> np.ndarray:
+    '''
+    Converts bounding boxes from xyxy (x_min, y_min, x_max, y_max) to xywh (x_min, y_min, width, height) format.
+
+    Args:
+        boxes (np.ndarray): Bounding boxes in xyxy format, shape (N, 4).
+
+    Returns:
+        np.ndarray: Bounding boxes in xywh format, shape (N, 4).
+    '''
+    
+    x_min = boxes[:, 0]           # x coordinates of the left upper corner
+    y_min = boxes[:, 1]           # y coordinates of the left upper corner
+    width = boxes[:, 2] - x_min   # Width of the boxes
+    height = boxes[:, 3] - y_min  # Height of the boxes
+
+    return np.stack(
+        [x_min, y_min, width, height],
+        axis=1
+    )
+# ---------------------------------------------------CONVERT XYXY TO XYWH FORMAT-------------------------------------------------
