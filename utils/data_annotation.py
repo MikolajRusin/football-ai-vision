@@ -75,8 +75,7 @@ if __name__ == '__main__':
     IOU_THRESHOLD = args.iou_threshold
     BATCH_SIZE = args.batch_size
     DATA_ANNOTATION_MODEL = YOLOModel(
-        api_key=ROBOLOW_API_KEY, model_id=ROBOFLOW_MODEL_ID,
-        conf_threshold=CONF_THRESHOLD, iou_threshold=IOU_THRESHOLD
+        api_key=ROBOLOW_API_KEY, model_id=ROBOFLOW_MODEL_ID
     )
     
     CATEGORIES = [
@@ -105,7 +104,7 @@ if __name__ == '__main__':
             img_batch = [cv2.imread(dataset_path / img_path) for img_path in img_paths]
             img_batch = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in img_batch]
 
-            output = DATA_ANNOTATION_MODEL.infer(img_batch)
+            output = DATA_ANNOTATION_MODEL.infer(img_batch, conf_threshold=CONF_THRESHOLD, iou_threshold=IOU_THRESHOLD)
             annotated_img_paths.extend(img_paths)
             annotated_imgs.extend(output)
 
@@ -113,4 +112,6 @@ if __name__ == '__main__':
 
         with open(COCO_ANNOTATIONS_PATH / f'{dataset_path.name}.json', 'w') as json_file:
             json.dump(coco_data, json_file, indent=4)
+
+    print('***Annotating Ended***')
 # ---------------------------------------------------------MAIN-------------------------------------------------------

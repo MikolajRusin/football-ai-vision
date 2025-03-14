@@ -15,19 +15,17 @@ from tqdm import tqdm
 class YOLOModel:
     api_key: str
     model_id: str
-    conf_threshold: float
-    iou_threshold: Optional[float] = None
 
     def __post_init__(self):
         self.model = get_model(api_key=self.api_key, model_id=self.model_id)
 
-    def infer(self, data: Union[List[np.ndarray], np.ndarray]) -> List[sv.Detections]:
-        outputs = self.model.infer(data, confidence=self.conf_threshold)
-        outputs = self._process_outputs(outputs)
+    def infer(self, data: Union[List[np.ndarray], np.ndarray], conf_threshold: float, iou_threshold: Optional[float] = None) -> List[sv.Detections]:
+        outputs = self.model.infer(data, confidence=conf_threshold)
+        outputs = self._process_outputs(outputs, iou_threshold=iou_threshold)
 
         return outputs
     
-    def _process_outputs(self, outputs: List) -> List[sv.Detections]:
+    def _process_outputs(self, outputs: List, iou_threshold: Optional[float] = None) -> List[sv.Detections]:
         all_boxes = [np.array([[pred.x, pred.y, pred.width, pred.height] for pred in output.predictions]) for output in outputs]
         all_scores = [np.array([pred.confidence for pred in output.predictions]) for output in outputs]
         all_class_ids = [np.array([pred.class_id for pred in output.predictions]) for output in outputs]
@@ -36,9 +34,9 @@ class YOLOModel:
         for boxes_per_image, scores_per_image, class_ids_per_image in zip(all_boxes, all_scores, all_class_ids):
             boxes_per_image = xcycwh_to_xyxy(boxes_per_image)
 
-            if self.iou_threshold is not None:
+            if iou_threshold is not None:
                 boxes_per_image, scores_per_image, class_ids_per_image = apply_nms(boxes_per_image, scores_per_image, class_ids_per_image, 
-                                                                                   iou_threshold=self.iou_threshold)
+                                                                                   iou_threshold=iou_threshold)
             detections = sv.Detections(
                 xyxy=boxes_per_image,
                 confidence=scores_per_image,
@@ -79,7 +77,7 @@ class YOLOModel:
                     'id': annotation_id,
                     'image_id': img_id + 1,
                     'category_id': int(class_id + 1),
-                    'bbox_xywh': bbox_xywh,
+                    'bbox': bbox_xywh,
                     'area': float(width * height),
                     'iscrowd': 0,
                     'score': float(score)
