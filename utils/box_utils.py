@@ -5,6 +5,7 @@ It includes implementations for:
 1. **Non-Maximum Supression (NMS)** A Method to remove redundant averlapping bounding boxes based on their scores.
 2. **Bounding Box Format Conversions**:
     - xcycwh_to_xyxy
+    - xywyh_to_xyxy
     - xyxy_to_xywh
 
 These functiosns are useful for processing object detection outputs from deepl learning models.
