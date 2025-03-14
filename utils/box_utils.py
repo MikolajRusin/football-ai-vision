@@ -1,3 +1,15 @@
+'''
+This Python file contains utility functions for working with bounding boxes in object detection tasks.
+It includes implementations for:
+
+1. **Non-Maximum Supression (NMS)** A Method to remove redundant averlapping bounding boxes based on their scores.
+2. **Bounding Box Format Conversions**:
+    - xcycwh_to_xyxy
+    - xyxy_to_xywh
+
+These functiosns are useful for processing object detection outputs from deepl learning models.
+'''
+
 import torch
 import numpy as np
 from typing import Tuple, Union
@@ -70,6 +82,29 @@ def xcycwh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
         axis=1
     )
 # --------------------------------------------------CONVERT XCYCWH TO XYXY FORMAT------------------------------------------------
+
+# ---------------------------------------------------CONVERT XYWH TO XYXY FORMAT-------------------------------------------------
+def xywh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
+    '''
+    Converts bounding boxes from xywh (x_min, y_min, width, height) to xyxy (x_min, y_min, x_max, y_max) format.
+
+    Args:
+        boxes (np.ndarray): Bounding boxes in xywh format, shape (N, 4).
+
+    Returns:
+        np.ndarray: Bounding boxes in xyxy format, shape (N, 4).
+    '''
+
+    x_min = boxes[:, 0]            # x coordinates of the left upper corner
+    y_min = boxes[:, 1]            # y coordinates of the left upper corner
+    x_max = x_min + (boxes[:, 2])  # x_min + width
+    y_max = y_min + (boxes[:, 3])  # y_min + height
+
+    return np.stack(
+        [x_min, y_min, x_max, y_max], 
+        axis=1
+    )
+# ---------------------------------------------------CONVERT XYWH TO XYXY FORMAT-------------------------------------------------
 
 # ---------------------------------------------------CONVERT XYXY TO XYWH FORMAT-------------------------------------------------
 def xyxy_to_xywh(boxes: np.ndarray) -> np.ndarray:
