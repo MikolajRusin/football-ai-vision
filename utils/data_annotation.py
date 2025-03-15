@@ -52,32 +52,35 @@ def create_batch(data: list, batch_size: int) -> Generator[list, None, None]:
 
 # ---------------------------------------------------------MAIN-------------------------------------------------------
 if __name__ == '__main__':
+    # Parse the arguments from terminal
     parser = argparse.ArgumentParser()
-    parser.add_argument('--conf_threshold', type=float, default=0.3, help='Confidence threshold for model predictions')
-    parser.add_argument('--iou_threshold', type=float, default=None, help='IoU threshold for Non-Maximum Supression')
-    parser.add_argument('--batch_size', type=int, default=4, help='Number of elements in each batch')
+    parser.add_argument('--conf_threshold', type=float, default=0.3, help='Confidence threshold for model predictions')  # Confidence threshold
+    parser.add_argument('--iou_threshold', type=float, default=None, help='IoU threshold for Non-Maximum Supression')    # IoU threshold
+    parser.add_argument('--batch_size', type=int, default=4, help='Number of elements in each batch')                    # Batch size
     args = parser.parse_args()
 
     # Paths
-    PROJECT_PATH = Path(__file__).resolve().parent.parent # Path of the project
-    DATA_PATH = PROJECT_PATH / 'data'  # Main data dir
-    IMAGES_PATH = DATA_PATH / 'images'  # Images dir
-    TRAIN_SET_PATH = IMAGES_PATH / 'train'  # Train set path
-    VALID_SET_PATH = IMAGES_PATH / 'valid'  # Valid set path
-    TEST_SET_PATH = IMAGES_PATH / 'test'  # Test set path
-    COCO_ANNOTATIONS_PATH = DATA_PATH / 'coco_annotations'
-    os.makedirs(COCO_ANNOTATIONS_PATH, exist_ok=True)
+    PROJECT_PATH = Path(__file__).resolve().parent.parent   # Path of the project
+    DATA_PATH = PROJECT_PATH / 'data'                       # Main data dir
+    IMAGES_PATH = DATA_PATH / 'images'                      # Images dir
+    TRAIN_SET_PATH = IMAGES_PATH / 'train'                  # Train set path
+    VALID_SET_PATH = IMAGES_PATH / 'valid'                  # Valid set path
+    TEST_SET_PATH = IMAGES_PATH / 'test'                    # Test set path
+    COCO_ANNOTATIONS_PATH = DATA_PATH / 'coco_annotations'  # Path where the COCO Annotations will be saved
+    os.makedirs(COCO_ANNOTATIONS_PATH, exist_ok=True)       # Make the directory if does not exist
 
-    load_dotenv()
-    ROBOLOW_API_KEY = os.getenv('ROBOFLOW_API_KEY')
-    ROBOFLOW_MODEL_ID = 'football-players-detection-3zvbc/11'
-    CONF_THRESHOLD = args.conf_threshold
-    IOU_THRESHOLD = args.iou_threshold
-    BATCH_SIZE = args.batch_size
-    DATA_ANNOTATION_MODEL = YOLOModel(
-        api_key=ROBOLOW_API_KEY, model_id=ROBOFLOW_MODEL_ID
+    # Dependencies
+    load_dotenv()  # Load .env file
+    ROBOLOW_API_KEY = os.getenv('ROBOFLOW_API_KEY')            # Roboflow API Key
+    ROBOFLOW_MODEL_ID = 'football-players-detection-3zvbc/11'  # Roboflow model id
+    CONF_THRESHOLD = args.conf_threshold                       # Confidence threshold
+    IOU_THRESHOLD = args.iou_threshold                         # Intersection of Union threshold for Non-Maximum Suppression
+    BATCH_SIZE = args.batch_size                               # Number of images in one batch
+    DATA_ANNOTATION_MODEL = YOLOModel(                         # YOLOModel object
+        api_key=ROBOLOW_API_KEY, model_id=ROBOFLOW_MODEL_ID  
     )
     
+    # List of category mapping in COCO format.
     CATEGORIES = [
         {'id': 1, 'name': 'ball'},
         {'id': 2, 'name': 'goalkeeper'},
@@ -85,31 +88,41 @@ if __name__ == '__main__':
         {'id': 4, 'name': 'referee'}
     ]
 
+    # List of paths where the datasets are
     dataset_paths = [
         TRAIN_SET_PATH,
         VALID_SET_PATH,
         TEST_SET_PATH
     ]
 
+    # Process every directory of image set
     for dataset_path in dataset_paths:
+        # Image file names in the current directory
         img_file_names = os.listdir(dataset_path)
 
+        # Lists of already processed image paths and images
         annotated_img_paths = []
         annotated_imgs = []
+        # Process every batch of images from the current directory
         for img_file_names_batch in tqdm(create_batch(img_file_names, batch_size=BATCH_SIZE), 
                                          total=ceil(len(img_file_names) / BATCH_SIZE), 
                                          desc=f'Annotating images in {dataset_path} | Total: {len(img_file_names)} | Batch size: {BATCH_SIZE}'):
             
+            # Load the images and convert from BGR to RGB format
             img_paths = [dataset_path / img_file_name for img_file_name in img_file_names_batch]
             img_batch = [cv2.imread(dataset_path / img_path) for img_path in img_paths]
             img_batch = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in img_batch]
 
+            # Model inference on the batch of images
             output = DATA_ANNOTATION_MODEL.infer(img_batch, conf_threshold=CONF_THRESHOLD, iou_threshold=IOU_THRESHOLD)
+            # Add processed images and their paths
             annotated_img_paths.extend(img_paths)
             annotated_imgs.extend(output)
 
+        # Convert YOLO format to COCO JSON format
         coco_data = DATA_ANNOTATION_MODEL.yolo_to_coco(annotated_imgs, annotated_img_paths, categories=CATEGORIES)
 
+        # Save the coco data in JSON file
         with open(COCO_ANNOTATIONS_PATH / f'{dataset_path.name}.json', 'w') as json_file:
             json.dump(coco_data, json_file, indent=4)
 
