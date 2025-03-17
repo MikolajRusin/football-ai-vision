@@ -3,9 +3,11 @@ This Python file contains utility functions for working with bounding boxes in o
 It includes implementations for:
 
 1. **Non-Maximum Supression (NMS)** A Method to remove redundant averlapping bounding boxes based on their scores.
-2. **Bounding Box Format Conversions**:
+2. **Normalize bboxes** A method to normalize bounding boxes.
+3. **Bounding Box Format Conversions**:
     - xcycwh_to_xyxy
-    - xywyh_to_xyxy
+    - xywh_to_xcycwh
+    - xywh_to_xyxy
     - xyxy_to_xywh
 
 These functiosns are useful for processing object detection outputs from deepl learning models.
@@ -61,6 +63,27 @@ def apply_nms(
     )
 # ----------------------------------------------------NON-MAXIMUM SUPRESSION----------------------------------------------------
 
+# -------------------------------------------------------NORMALIZE BBOXES-------------------------------------------------------
+def normalize_bboxes(boxes: np.ndarray, image_shape: Tuple[int, int]) -> np.ndarray:
+    '''
+    Normalizes bounding boxes to range (0 - 1). Normalization is carried out on the basis of the given width and height 
+
+    Args:
+        boxes (np.ndarray): Bounding boxes to normalize, shape (N, 4).
+
+    Returns:
+        np.ndarray: Normalized bounding boxes, shape (N, 4).
+    '''
+
+    x_normalize = boxes[:, [0, 2]] / image_shape[1]  # X coordinates / width
+    y_normalize = boxes[:, [1, 3]] / image_shape[0]  # Y coordinates / width
+
+    return np.stack(
+        [x_normalize[:, 0], y_normalize[:, 0], x_normalize[:, 1], y_normalize[:, 1]], 
+        axis=1
+    )
+# -------------------------------------------------------NORMALIZE BBOXES-------------------------------------------------------
+
 # -------------------------------------------------CONVERT XCYCWH TO XYXY FORMAT------------------------------------------------
 def xcycwh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
     '''
@@ -73,16 +96,41 @@ def xcycwh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
         np.ndarray: Bounding boxes in xyxy format, shape (N, 4).
     '''
 
-    x_min = boxes[:, 0] - (boxes[:, 2] / 2)  # x_center - width / 2
-    y_min = boxes[:, 1] - (boxes[:, 3] / 2)  # y_center - height / 2
-    x_max = boxes[:, 0] + (boxes[:, 2] / 2)  # x_center + width / 2
-    y_max = boxes[:, 1] + (boxes[:, 3] / 2)  # y_center + height / 2
+    x_c, y_c, width, height = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+
+    x_min = x_c - (width / 2)   # x_center - width / 2
+    y_min = y_c - (height / 2)  # y_center - height / 2
+    x_max = x_c + (width / 2)   # x_center + width / 2
+    y_max = y_c + (height / 2)  # y_center + height / 2
 
     return np.stack(
         [x_min, y_min, x_max, y_max], 
         axis=1
     )
 # --------------------------------------------------CONVERT XCYCWH TO XYXY FORMAT------------------------------------------------
+
+# --------------------------------------------------CONVERT XYWH TO XCYCWH FORMAT------------------------------------------------
+def xywh_to_xcycwh(boxes: np.ndarray) -> np.ndarray:
+    '''
+    Converts bounding boxes from xywh (x_min, y_min, width, height) to xcycwh (x_center, y_center, width, height) format.
+
+    Args:
+        boxes (np.ndarray): Bounding boxes in xywh format, shape (N, 4).
+
+    Returns:
+        np.ndarray: Bounding boxes in xcycwh format, shape (N, 4).
+    '''
+
+    x_min, y_min, width, height = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+
+    x_c = x_min + (width / 2)   # x_min + width / 2  (x_c -> X coordiantes of the center object)
+    y_c = y_min + (height / 2)  # y_min + height / 2  (y_c -> Y coordiantes of the center object)
+
+    return np.stack(
+        [x_c, y_c, width, height], 
+        axis=1
+    )
+# --------------------------------------------------CONVERT XYWH TO XCYCWH FORMAT------------------------------------------------
 
 # ---------------------------------------------------CONVERT XYWH TO XYXY FORMAT-------------------------------------------------
 def xywh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
@@ -96,10 +144,10 @@ def xywh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
         np.ndarray: Bounding boxes in xyxy format, shape (N, 4).
     '''
 
-    x_min = boxes[:, 0]            # x coordinates of the left upper corner
-    y_min = boxes[:, 1]            # y coordinates of the left upper corner
-    x_max = x_min + (boxes[:, 2])  # x_min + width
-    y_max = y_min + (boxes[:, 3])  # y_min + height
+    x_min, y_min, width, height = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+
+    x_max = x_min + width   # x_min + width
+    y_max = y_min + height  # y_min + height
 
     return np.stack(
         [x_min, y_min, x_max, y_max], 
@@ -119,10 +167,10 @@ def xyxy_to_xywh(boxes: np.ndarray) -> np.ndarray:
         np.ndarray: Bounding boxes in xywh format, shape (N, 4).
     '''
     
-    x_min = boxes[:, 0]           # x coordinates of the left upper corner
-    y_min = boxes[:, 1]           # y coordinates of the left upper corner
-    width = boxes[:, 2] - x_min   # Width of the boxes
-    height = boxes[:, 3] - y_min  # Height of the boxes
+    x_min, y_min, x_max, y_max = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+
+    width = x_max - x_min   # Width of the boxes
+    height = y_max - y_min  # Height of the boxes
 
     return np.stack(
         [x_min, y_min, width, height],
