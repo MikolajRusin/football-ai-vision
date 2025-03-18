@@ -4,7 +4,8 @@ It includes implementations for:
 
 1. **Non-Maximum Supression (NMS)** A Method to remove redundant averlapping bounding boxes based on their scores.
 2. **Normalize bboxes** A method to normalize bounding boxes.
-3. **Bounding Box Format Conversions**:
+3. **Denormalizes bboxes** A method to denormalize bounding boxes.
+4. **Bounding Box Format Conversions**:
     - xcycwh_to_xyxy
     - xywh_to_xcycwh
     - xywh_to_xyxy
@@ -70,19 +71,52 @@ def normalize_bboxes(boxes: np.ndarray, image_shape: Tuple[int, int]) -> np.ndar
 
     Args:
         boxes (np.ndarray): Bounding boxes to normalize, shape (N, 4).
+        image_shape (Tuple[int, int]): Original image width and height.
 
     Returns:
         np.ndarray: Normalized bounding boxes, shape (N, 4).
     '''
 
-    x_normalize = boxes[:, [0, 2]] / image_shape[1]  # X coordinates / width
-    y_normalize = boxes[:, [1, 3]] / image_shape[0]  # Y coordinates / width
+    # Normalize bounding boxes
+    x_normalized = boxes[:, [0, 2]] / image_shape[1]  # X coordinates / width
+    y_normalized = boxes[:, [1, 3]] / image_shape[0]  # Y coordinates / width
 
     return np.stack(
-        [x_normalize[:, 0], y_normalize[:, 0], x_normalize[:, 1], y_normalize[:, 1]], 
+        [x_normalized[:, 0], y_normalized[:, 0], x_normalized[:, 1], y_normalized[:, 1]], 
         axis=1
     )
 # -------------------------------------------------------NORMALIZE BBOXES-------------------------------------------------------
+
+# ------------------------------------------------------DENORMALIZE BBOXES------------------------------------------------------
+def denormalize_bboxes(boxes: np.ndarray, image_shape: Tuple[int, int]) -> np.ndarray:
+    '''
+    Denormalizes bounding boxes from range (0 - 1) back to original values. 
+
+    Args:
+        boxes (np.ndarray): Bounding boxes to normalize, shape (N, 4).
+        image_shape (Tuple[int, int]): Original image width and height.
+
+    Returns:
+        np.ndarray: Denormalized bounding boxes, shape (N, 4).
+    '''
+
+    # Denormalize bounding boxes
+    x_denormalized = boxes[:, [0, 2]] * image_shape[1]  # X coordinates * width
+    y_denormalized = boxes[:, [1, 3]] * image_shape[0]  # Y coordinates * width
+
+    # Ensure that the bounding box coordinates are withing image boundaries
+    x_denormalized = np.clip(x_denormalized, 0, image_shape[1])  # Clip y values to [0, width]
+    y_denormalized = np.clip(y_denormalized, 0, image_shape[0])  # Clip x values to [0, height]
+
+    # Round the nearest integer
+    x_denormalized = np.round(x_denormalized).astype(float)
+    y_denormalized = np.round(y_denormalized).astype(float)
+
+    return np.stack(
+        [x_denormalized[:, 0], y_denormalized[:, 0], x_denormalized[:, 1], y_denormalized[:, 1]], 
+        axis=1
+    )
+# ------------------------------------------------------DENORMALIZE BBOXES------------------------------------------------------
 
 # -------------------------------------------------CONVERT XCYCWH TO XYXY FORMAT------------------------------------------------
 def xcycwh_to_xyxy(boxes: np.ndarray) -> np.ndarray:
