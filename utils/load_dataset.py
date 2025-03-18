@@ -28,7 +28,7 @@ class LoadDataset(Dataset):
         root_dir (Path): Path to the directory containing images.
         coco_json_file (Path): Path to the COCO JSON annotation file.
         transform (Union[albumentations.compose]): Transformaction to be applied to image and bounding boxes. Defaults to None.
-        set_ratio (Union[float]): Ratio of dataset to use (0.0 < set_ratio <= 1.0).
+        set_ratio (Union[float]): Ratio of dataset to use (0.0 < set_ratio <= 1.0). Defaults to None.
         return_box_format (str): Desired bounding box format, such as 'xcycwh' or 'yolo', 'xyxy' or 'pascal_voc', 'xywh' or 'coco'. Defaults to 'xcycwh'.
 
     Raises:
@@ -74,8 +74,8 @@ class LoadDataset(Dataset):
         if not (self.image_file_names.shape[0] == len(self.coco_data['images'])):
             raise ValueError(
                 f'The size of image file names from directory and images from COCO JSON file are not the same.'
-                f'\nImages in directory -> {self.image_file_names.shape[0]}'
-                f'\nImages in COCO JSON file -> {len(self.coco_data['images'])}'
+                f"\nImages in directory -> {self.image_file_names.shape[0]}"
+                f"\nImages in COCO JSON file -> {len(self.coco_data['images'])}"
             )
         
         print(f'Loaded {self.image_file_names.shape[0]} images from {self.root_dir}')
@@ -106,7 +106,7 @@ class LoadDataset(Dataset):
 
         filtered_imgs = [img_data
                          for img_data in self.coco_data['images']
-                         if img_data in self.image_file_names]
+                         if img_data['file_name'] in self.image_file_names]
         
         filtered_img_ids = set(img_data['id']
                                for img_data in filtered_imgs)
@@ -163,15 +163,16 @@ class LoadDataset(Dataset):
                 bboxes.append(ann['bbox'])
                 labels.append(ann['category_id'])
 
-        # Convert to numpy arrays and normalize bounding boxes
+        # Convert to numpy arrays
         labels = np.array(labels)
-        bboxes = normalize_bboxes(np.array(bboxes)) 
+        bboxes = np.array(bboxes)
 
         # Apply transformation if the transform function is provided
         if self.transform is not None:
-            transformed = self.transform(image=img, bboxes=bboxes)      
+            transformed = self.transform(image=img, bboxes=bboxes, class_labels=labels)      
             img = transformed['image']      # Transformed image
             bboxes = transformed['bboxes']  # Transformerd bounding boxes
+            labels = transformed['class_labels']
 
         # Convert bounding boxes to the required format
         if self.return_box_format == 'xcycwh' or self.return_box_format == 'yolo':
@@ -186,6 +187,9 @@ class LoadDataset(Dataset):
                 f'\nProvided: {self.return_box_format}'
                 "\nExpected: 'xcycwh' or 'yolo', 'xyxy' or 'pascal_voc', 'xywh' or 'coco'"
             )
+        
+        # Normalize bboxes to range [0.0 - 1.0]
+        bboxes = normalize_bboxes(bboxes, img.shape)
 
         # Prepare target dictionary
         target = {
