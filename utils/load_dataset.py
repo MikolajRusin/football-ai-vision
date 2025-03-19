@@ -27,9 +27,10 @@ class LoadDataset(Dataset):
     Args:
         root_dir (Path): Path to the directory containing images.
         coco_json_file (Path): Path to the COCO JSON annotation file.
-        transform (Optional[albumentations.compose]): Transformaction to be applied to image and bounding boxes. Defaults to None.
+        transform (Optional[albumentations.compose]): Transformation to be applied to image and bounding boxes. Defaults to None.
         set_ratio (Optional[float]): Ratio of dataset to use (0.0 < set_ratio <= 1.0). Defaults to None.
         return_box_format (str): Desired bounding box format, such as 'xcycwh' or 'yolo', 'xyxy' or 'pascal_voc', 'xywh' or 'coco'. Defaults to 'xcycwh'.
+        normalize_bboxes (bool): If set to 'True', the bounding boxes will be normalized to the range (0.0 - 1.0) based on the image's width and height. Defaults to 'False'.
 
     Raises:
         ValueError: if set_ratio is outside the valid range.
@@ -43,6 +44,7 @@ class LoadDataset(Dataset):
     transform: Optional[albumentations.Compose] = None
     set_ratio: Optional[float] = None
     return_box_format: str = 'xcycwh'
+    normalize_bboxes: bool = False
 
     def __post_init__(self):
         '''
@@ -189,7 +191,8 @@ class LoadDataset(Dataset):
             )
         
         # Normalize bboxes to range (0.0 - 1.0)
-        bboxes = normalize_bboxes(bboxes, img.shape)
+        if self.normalize_bboxes:
+            bboxes = normalize_bboxes(bboxes, img.shape)
 
         # Prepare target dictionary
         target = {
