@@ -11,7 +11,7 @@ from utils.box_utils import normalize_bboxes, xywh_to_xcycwh, xywh_to_xyxy
 from torch.utils.data import Dataset
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union, Tuple, Dict
+from typing import Optional, Tuple, Dict
 import albumentations
 import numpy as np
 import os
@@ -27,8 +27,8 @@ class LoadDataset(Dataset):
     Args:
         root_dir (Path): Path to the directory containing images.
         coco_json_file (Path): Path to the COCO JSON annotation file.
-        transform (Union[albumentations.compose]): Transformaction to be applied to image and bounding boxes. Defaults to None.
-        set_ratio (Union[float]): Ratio of dataset to use (0.0 < set_ratio <= 1.0). Defaults to None.
+        transform (Optional[albumentations.compose]): Transformaction to be applied to image and bounding boxes. Defaults to None.
+        set_ratio (Optional[float]): Ratio of dataset to use (0.0 < set_ratio <= 1.0). Defaults to None.
         return_box_format (str): Desired bounding box format, such as 'xcycwh' or 'yolo', 'xyxy' or 'pascal_voc', 'xywh' or 'coco'. Defaults to 'xcycwh'.
 
     Raises:
@@ -40,8 +40,8 @@ class LoadDataset(Dataset):
 
     root_dir: Path
     coco_json_file: Path
-    transform: Union[albumentations.Compose] = None
-    set_ratio: Union[float] = None
+    transform: Optional[albumentations.Compose] = None
+    set_ratio: Optional[float] = None
     return_box_format: str = 'xcycwh'
 
     def __post_init__(self):
@@ -188,7 +188,7 @@ class LoadDataset(Dataset):
                 "\nExpected: 'xcycwh' or 'yolo', 'xyxy' or 'pascal_voc', 'xywh' or 'coco'"
             )
         
-        # Normalize bboxes to range [0.0 - 1.0]
+        # Normalize bboxes to range (0.0 - 1.0)
         bboxes = normalize_bboxes(bboxes, img.shape)
 
         # Prepare target dictionary

@@ -74,7 +74,7 @@ if __name__ == '__main__':
     ROBOLOW_API_KEY = os.getenv('ROBOFLOW_API_KEY')            # Roboflow API Key
     ROBOFLOW_MODEL_ID = 'football-players-detection-3zvbc/11'  # Roboflow model id
     CONF_THRESHOLD = args.conf_threshold                       # Confidence threshold
-    IOU_THRESHOLD = args.iou_threshold                         # Intersection of Union threshold for Non-Maximum Suppression
+    IOU_THRESHOLD = args.iou_threshold                         # Intersection over Union threshold for Non-Maximum Suppression
     BATCH_SIZE = args.batch_size                               # Number of images in one batch
     DATA_ANNOTATION_MODEL = YOLOModel(                         # YOLOModel object
         api_key=ROBOLOW_API_KEY, model_id=ROBOFLOW_MODEL_ID  

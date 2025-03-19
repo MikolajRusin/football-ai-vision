@@ -67,7 +67,7 @@ def apply_nms(
 # -------------------------------------------------------NORMALIZE BBOXES-------------------------------------------------------
 def normalize_bboxes(boxes: np.ndarray, image_shape: Tuple[int, int]) -> np.ndarray:
     '''
-    Normalizes bounding boxes to range (0 - 1). Normalization is carried out on the basis of the given width and height 
+    Normalizes bounding boxes to range (0.0 - 1.0). Normalization is carried out on the basis of the given width and height 
 
     Args:
         boxes (np.ndarray): Bounding boxes to normalize, shape (N, 4).
@@ -90,7 +90,7 @@ def normalize_bboxes(boxes: np.ndarray, image_shape: Tuple[int, int]) -> np.ndar
 # ------------------------------------------------------DENORMALIZE BBOXES------------------------------------------------------
 def denormalize_bboxes(boxes: np.ndarray, image_shape: Tuple[int, int]) -> np.ndarray:
     '''
-    Denormalizes bounding boxes from range (0 - 1) back to original values. 
+    Denormalizes bounding boxes from range (0.0 - 1.0) back to original values. 
 
     Args:
         boxes (np.ndarray): Bounding boxes to normalize, shape (N, 4).
