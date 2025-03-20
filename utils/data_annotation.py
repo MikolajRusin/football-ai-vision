@@ -60,7 +60,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Paths
-    PROJECT_PATH = Path(__file__).resolve().parent.parent   # Path of the project
+    PROJECT_PATH = Path(__file__).resolve().parent.parent   # Main project path
     DATA_PATH = PROJECT_PATH / 'data'                       # Main data dir
     IMAGES_PATH = DATA_PATH / 'images'                      # Images dir
     TRAIN_SET_PATH = IMAGES_PATH / 'train'                  # Train set path
